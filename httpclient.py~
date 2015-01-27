@@ -50,13 +50,16 @@ class HTTPClient(object):
         return s
 
     def get_code(self, data):
-        return None
+	response = data.split("\r\n\r\n", 1)	
+	line1 = response[0].split("\r\n", 1)[0]
+        return line1.split(" ")[1]
 
     def get_headers(self,data):
         return None
 
     def get_body(self, data):
-        return None
+	response = data.split("\r\n\r\n", 1)	
+	return response[1]
 
     # read everything from the socket
     def recvall(self, sock):
@@ -71,26 +74,34 @@ class HTTPClient(object):
         return str(buffer)
 
     def GET(self, url, args=None):	
-	host = socket.gethostbyname(url)
-	path = url.split("/", 1)[1]
+	print url
+	#host = socket.gethostbyname(url)
+	try:
+		host = url.split("/", 1)[0]
+		path = url.split("/", 1)[1]
+	except IndexError: 
+		path = ""
 	port = 80
 	s = self.connect(host, port)
 
-	request = "GET / HTTP/1.1\r\n"
+	request = "GET /" + path + " HTTP/1.1\r\n"
 	request += "User-Agent: httpclient.py\r\n"
-	request += "Host: " + host + ":" + port 
+	request += "Host: " + host + ":" + str(port)
 	if (args):
 		request += urllib.urlencode(args)
 	request += "\r\n"
 	request += "Connection: close\r\n"
 	request += "Accept: */*\r\n\r\n"
-	print request
+	#print request
 	s.sendall(request)
 	data = self.recvall(s)
-	response = data.split("\r\n\r\n", 1)	
-	line1 = response[0].split("\r\n", 1)[0]
-        code = line1.split(" ")[1]
-        body = response[1]
+	#response = data.split("\r\n\r\n", 1)	
+	#line1 = response[0].split("\r\n", 1)[0]
+        #code = line1.split(" ")[1]
+        #body = response[1]
+	code = self.get_code(data)
+	body = self.get_body(data)
+	print code#, body	
 	s.close()
         return HTTPRequest(code, body)
 
@@ -102,9 +113,6 @@ class HTTPClient(object):
     def command(self, url, command="GET", args=None):
 	#strip the http://
 	url = url.replace("http://", "")
-	#ensure we have a trailing slash
-	if (!url.endswith("/")):
-		url += "/"
         if (command == "POST"):
             return self.POST( url, args )
         else:
