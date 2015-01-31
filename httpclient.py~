@@ -50,11 +50,11 @@ class HTTPClient(object):
 		sys.exit()
         return s
 
-    def get_code(self, data):
+    def get_code(self, data, from_post = None):
 	response = data.split("\r\n\r\n", 1)	
 	line1 = response[0].split("\r\n", 1)[0]
-	print "line1 is " + line1
-	print line1.split(" ")[1]
+	if(from_post):		
+		print "line 1 is " + line1
         return int(line1.split(" ")[1])
 
     def get_headers(self,data):
@@ -77,7 +77,6 @@ class HTTPClient(object):
         return str(buffer)
 
     def GET(self, url, args=None):	
-	print url
 	parsed = urlparse(url)
 	#print parsed
 	port = 80
@@ -93,7 +92,7 @@ class HTTPClient(object):
 	request += "\r\n"
 	request += "Connection: close\r\n"
 	request += "Accept: */*\r\n\r\n"
-	print request
+	#print request
 	s.sendall(request)
 	data = self.recvall(s)
 	code = self.get_code(data)
@@ -103,8 +102,28 @@ class HTTPClient(object):
         return HTTPRequest(code, body)
 
     def POST(self, url, args=None):
-        code = 500
-        body = ""
+	print "received post"
+        parsed = urlparse(url)
+	port = 80
+	postbody = ""
+	if(parsed.port != None):
+		port = parsed.port
+	if(args != None):
+		postbody = urllib.urlencode(args) 
+		print postbody
+	s = self.connect(parsed.hostname, port)
+	request = "POST /" + parsed.path + " HTTP/1.1\r\n"
+	request += "User-Agent: httpclient.py\r\n"
+	request += "Host: " + parsed.netloc + "\r\n"
+	request += "Accept: */*\r\n"
+	request += "Content-Length: " + str(len(postbody)) + "\r\n"
+	request += "Content-Type: application/x-www-form-urlencoded\r\n"
+	request += "Connection: close\r\n\r\n"
+	request += postbody        
+	s.sendall(request)
+	data = self.recvall(s)
+	code = self.get_code(data, 1)
+	body = self.get_body(data)
         return HTTPRequest(code, body)
 
     def command(self, url, command="GET", args=None):
