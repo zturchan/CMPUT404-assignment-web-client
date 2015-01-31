@@ -23,6 +23,7 @@ import socket
 import re
 # you may use urllib to encode data appropriately
 import urllib
+from urlparse import urlparse
 
 def help():
     print "httpclient.py [GET/POST] [URL]\n"
@@ -52,7 +53,9 @@ class HTTPClient(object):
     def get_code(self, data):
 	response = data.split("\r\n\r\n", 1)	
 	line1 = response[0].split("\r\n", 1)[0]
-        return line1.split(" ")[1]
+	print "line1 is " + line1
+	print line1.split(" ")[1]
+        return int(line1.split(" ")[1])
 
     def get_headers(self,data):
         return None
@@ -75,33 +78,27 @@ class HTTPClient(object):
 
     def GET(self, url, args=None):	
 	print url
-	#host = socket.gethostbyname(url)
-	try:
-		host = url.split("/", 1)[0]
-		path = url.split("/", 1)[1]
-	except IndexError: 
-		path = ""
+	parsed = urlparse(url)
+	#print parsed
 	port = 80
-	s = self.connect(host, port)
-
-	request = "GET /" + path + " HTTP/1.1\r\n"
+	if(parsed.port != None):
+		port = parsed.port	
+	#print "attempting to connect with host " + parsed.hostname + " on port " + str(port)
+	s = self.connect(parsed.hostname, port)
+	request = "GET /" + parsed.path + " HTTP/1.1\r\n"
 	request += "User-Agent: httpclient.py\r\n"
-	request += "Host: " + host + ":" + str(port)
+	request += "Host: " + parsed.netloc
 	if (args):
 		request += urllib.urlencode(args)
 	request += "\r\n"
 	request += "Connection: close\r\n"
 	request += "Accept: */*\r\n\r\n"
-	#print request
+	print request
 	s.sendall(request)
 	data = self.recvall(s)
-	#response = data.split("\r\n\r\n", 1)	
-	#line1 = response[0].split("\r\n", 1)[0]
-        #code = line1.split(" ")[1]
-        #body = response[1]
 	code = self.get_code(data)
 	body = self.get_body(data)
-	print code#, body	
+	#print code, body	
 	s.close()
         return HTTPRequest(code, body)
 
@@ -111,8 +108,6 @@ class HTTPClient(object):
         return HTTPRequest(code, body)
 
     def command(self, url, command="GET", args=None):
-	#strip the http://
-	url = url.replace("http://", "")
         if (command == "POST"):
             return self.POST( url, args )
         else:
