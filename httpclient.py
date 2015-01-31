@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
+# Copyright 2014 Zak Turchansky
 # Copyright 2013 Abram Hindle
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -112,6 +113,7 @@ class HTTPClient(object):
 	request += postbody        
 	s.sendall(request)
 	data = self.recvall(s)
+	print data
 	code = self.get_code(data)
 	body = self.get_body(data)
         return HTTPRequest(code, body)

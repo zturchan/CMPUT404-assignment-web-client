@@ -1,8 +1,0 @@
-GET / HTTP/1.1
-User-Agent: httpclient.py
-Host: 129.128.12.50:80
-Connection: close
-Accept: */*
-
-
-<__main__.HTTPRequest object at 0x7fa8eb54ac10>
